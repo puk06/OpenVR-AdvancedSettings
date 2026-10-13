@@ -5,26 +5,38 @@ SET exit_code_success=0
 SET exit_code_failure_build_apps=1
 SET exit_code_failure_build_locations=2
 
+REM Local build tool locations.
+SET "QT_LOC=C:\Qt\Qt5.12.12\5.12.12\msvc2017_64\bin"
+SET "VS_LOC=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvarsall.bat"
+SET "JOM_LOC=C:\Qt\Tools\QtCreator\bin\jom\jom.exe"
+
+REM Normalize PYTHON_LOC so paths containing spaces and the quoted CI form both work.
+IF DEFINED PYTHON_LOC (
+    SET "python_executable=%PYTHON_LOC:"=%python.exe"
+) ELSE (
+    SET "python_executable=python"
+)
+
 REM Used for echos.
 SET top_level_activity=MASTER
 
 REM If scripts are chain called the original dirs should not be overwritten.
 
-SET original_dir=%CD%
+SET "original_dir=%CD%"
 
 
 REM Arg 0 (called %0) is the full path to the file.
 REM https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/call#batch-parameters
 REM As per above link, %~dp0 expands the zeroth arg to a drive letter and path only.
-SET folder_path=%~dp0
+SET "folder_path=%~dp0"
 REM Project dir is up two dirs from the file.
-SET project_dir=%folder_path%
+SET "project_dir=%folder_path%"
 
 
 ECHO %top_level_activity%: Calling build script.
-%PYTHON_LOC%python %project_dir%\build_scripts\win\build.py build
+"%python_executable%" "%project_dir%\build_scripts\win\build.py" build
 IF ERRORLEVEL 1 EXIT /B %exit_code_failure_build_apps%
-call %project_dir%\build_scripts\win\current_build.bat
+call "%project_dir%\build_scripts\win\current_build.bat"
 IF ERRORLEVEL 1 EXIT /B %exit_code_failure_build_apps%
 
 REM The average dev doesn't need to package and zip it, just build it and test.
@@ -34,11 +46,11 @@ IF NOT DEFINED BUILD_PACKAGE (
     EXIT /B %exit_code_success%
 )
 ECHO %top_level_activity%: Calling packaging script.
-%PYTHON_LOC%python %project_dir%\build_scripts\win\build.py package
+"%python_executable%" "%project_dir%\build_scripts\win\build.py" package
 IF ERRORLEVEL 1 EXIT /B %exit_code_failure_build_apps%
-call %project_dir%\build_scripts\win\current_build.bat
+call "%project_dir%\build_scripts\win\current_build.bat"
 IF ERRORLEVEL 1 EXIT /B %exit_code_failure_build_apps%
 
-CD %original_dir%
+CD /D "%original_dir%"
 
 ECHO %top_level_activity%: MASTER DONE.

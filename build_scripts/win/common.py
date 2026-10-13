@@ -93,6 +93,10 @@ def add_line_to_run_bat_file(line: str):
     global bat_file_contents
     bat_file_contents += line + "\n"
 
+def quote_bat_path(path: str):
+    """Quotes a filesystem path for use in a generated Windows batch file."""
+    return '"' + path + '"'
+
 def add_error_handling_line_to_bat_file():
     """
     Adds an error handling line to the batch file.

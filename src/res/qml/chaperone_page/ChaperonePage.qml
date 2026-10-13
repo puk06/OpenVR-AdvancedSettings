@@ -434,6 +434,55 @@ MyStackViewPage {
                     text = ChaperoneTabController.height.toFixed(2)
                 }
             }
+
+            MyText {
+                text: "Center Arrow Distance:"
+                Layout.rightMargin: 12
+            }
+
+            MyPushButton2 {
+                text: "-"
+                Layout.preferredWidth: 40
+                onClicked: chaperoneCenterArrowDistanceSlider.decrease()
+            }
+
+            MySlider {
+                id: chaperoneCenterArrowDistanceSlider
+                from: 0.1
+                to: 5.0
+                stepSize: 0.1
+                value: 1.0
+                Layout.fillWidth: true
+                onPositionChanged: {
+                    chaperoneCenterArrowDistanceText.text = value.toFixed(1)
+                }
+                onValueChanged: {
+                    ChaperoneTabController.setCenterMarkerArrowDistance(value, false)
+                }
+            }
+
+            MyPushButton2 {
+                text: "+"
+                Layout.preferredWidth: 40
+                onClicked: chaperoneCenterArrowDistanceSlider.increase()
+            }
+
+            MyTextField {
+                id: chaperoneCenterArrowDistanceText
+                text: "1.0"
+                keyBoardUID: 304
+                Layout.preferredWidth: 100
+                Layout.leftMargin: 10
+                horizontalAlignment: Text.AlignHCenter
+                function onInputEvent(input) {
+                    var val = parseFloat(input)
+                    if (!isNaN(val)) {
+                        val = Math.max(0.1, Math.min(5.0, val))
+                        chaperoneCenterArrowDistanceSlider.value = val.toFixed(1)
+                    }
+                    text = ChaperoneTabController.centerMarkerArrowDistance.toFixed(1)
+                }
+            }
         }
 
         RowLayout {
@@ -446,6 +495,15 @@ MyStackViewPage {
                 Layout.fillWidth: false
                 onCheckedChanged: {
                     ChaperoneTabController.setCenterMarkerNew(this.checked, false)
+                }
+            }
+
+            MyToggleButton {
+                id: chaperoneCenterMarkerArrowToggle
+                text: "Center Marker Arrow"
+                Layout.fillWidth: false
+                onCheckedChanged: {
+                    ChaperoneTabController.setCenterMarkerArrow(this.checked, false)
                 }
             }
 
@@ -557,9 +615,12 @@ MyStackViewPage {
                 chaperoneHeightSlider.value = h
             }
             chaperoneHeightText.text = h
+            chaperoneCenterArrowDistanceSlider.value = ChaperoneTabController.centerMarkerArrowDistance
+            chaperoneCenterArrowDistanceText.text = ChaperoneTabController.centerMarkerArrowDistance.toFixed(1)
             chaperoneCenterMarkerToggle.checked = ChaperoneTabController.centerMarkerNew
             //We Need a Set call on init in order to display the overlay!
             ChaperoneTabController.setCenterMarkerNew(chaperoneCenterMarkerToggle.checked);
+            chaperoneCenterMarkerArrowToggle.checked = ChaperoneTabController.centerMarkerArrow
             chaperonePlaySpaceToggle.checked = ChaperoneTabController.playSpaceMarker
             chaperoneForceBoundsToggle.checked = ChaperoneTabController.forceBounds
             chaperoneDisableChaperone.checked = ChaperoneTabController.disableChaperone
@@ -627,6 +688,16 @@ MyStackViewPage {
             }
             onCenterMarkerNewChanged: {
                 chaperoneCenterMarkerToggle.checked = ChaperoneTabController.centerMarkerNew
+            }
+            onCenterMarkerArrowChanged: {
+                chaperoneCenterMarkerArrowToggle.checked = ChaperoneTabController.centerMarkerArrow
+            }
+            onCenterMarkerArrowDistanceChanged: {
+                var d = ChaperoneTabController.centerMarkerArrowDistance.toFixed(1)
+                if (Math.abs(chaperoneCenterArrowDistanceSlider.value - d) > 0.008) {
+                    chaperoneCenterArrowDistanceSlider.value = d
+                }
+                chaperoneCenterArrowDistanceText.text = d
             }
             onPlaySpaceMarkerChanged: {
                 chaperonePlaySpaceToggle.checked = ChaperoneTabController.playSpaceMarker

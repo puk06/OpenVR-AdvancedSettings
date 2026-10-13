@@ -41,8 +41,17 @@ OverlayError setOverlayWidthInMeters( vr::VROverlayHandle_t overlayHandle,
                                       float widthInMeters,
                                       std::string customErrorMsg = "" );
 OverlayError setOverlayFromFile( vr::VROverlayHandle_t overlayHandle,
-                                 std::string fileName,
-                                 std::string customErrorMsg = "" );
+                                  std::string fileName,
+                                  std::string customErrorMsg = "" );
+OverlayError setOverlayRaw( vr::VROverlayHandle_t overlayHandle,
+                            void* buffer,
+                            uint32_t width,
+                            uint32_t height,
+                            uint32_t bytesPerPixel,
+                            std::string customErrorMsg = "" );
+OverlayError setOverlayTexelAspect( vr::VROverlayHandle_t overlayHandle,
+                                    float aspect,
+                                    std::string customErrorMsg = "" );
 OverlayError showOverlay( vr::VROverlayHandle_t overlayHandle,
                           std::string customErrorMsg = "" );
 OverlayError hideOverlay( vr::VROverlayHandle_t overlayHandle,
@@ -51,6 +60,11 @@ OverlayError setOverlayTransformAbsolute(
     vr::VROverlayHandle_t overlayHandle,
     vr::ETrackingUniverseOrigin trackingOrigin,
     const vr::HmdMatrix34_t* trackingOriginToOverlayTransform,
+    std::string customErrorMsg = "" );
+OverlayError setOverlayTransformTrackedDeviceRelative(
+    vr::VROverlayHandle_t overlayHandle,
+    vr::TrackedDeviceIndex_t trackedDevice,
+    const vr::HmdMatrix34_t* deviceToOverlayTransform,
     std::string customErrorMsg = "" );
 
 std::string getOverlayKey( vr::VROverlayHandle_t overlayHandle );

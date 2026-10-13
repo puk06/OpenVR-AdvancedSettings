@@ -291,6 +291,10 @@ void ChaperoneTabController::eventLoopTick(
         if ( poseHmd.bPoseIsValid && poseHmd.bDeviceIsConnected
              && poseHmd.eTrackingResult == vr::TrackingResult_Running_OK )
         {
+            if ( centerMarkerNew() && centerMarkerArrow() )
+            {
+                updateCenterMarkerArrow( poseHmd );
+            }
             auto distanceHmd = parent->chaperoneUtils().getDistanceToChaperone(
                 { poseHmd.mDeviceToAbsoluteTracking.m[0][3],
                   poseHmd.mDeviceToAbsoluteTracking.m[1][3],
@@ -846,6 +850,26 @@ void ChaperoneTabController::updateCenterMarkerOverlayColor()
     float chapColorB = static_cast<float>( m_chaperoneColorB ) / 255.0f;
     ovr_overlay_wrapper::setOverlayColor(
         m_chaperoneFloorOverlayHandle, chapColorR, chapColorG, chapColorB, "" );
+    if ( m_centerMarkerArrowOverlayHandle != vr::k_ulOverlayHandleInvalid )
+    {
+        ovr_overlay_wrapper::setOverlayColor( m_centerMarkerArrowOverlayHandle,
+                                              chapColorR,
+                                              chapColorG,
+                                              chapColorB,
+                                              "" );
+    }
+}
+
+bool ChaperoneTabController::centerMarkerArrow() const
+{
+    return settings::getSetting(
+        settings::BoolSetting::CHAPERONE_centerMarkerArrow );
+}
+
+float ChaperoneTabController::centerMarkerArrowDistance() const
+{
+    return static_cast<float>( settings::getSetting(
+        settings::DoubleSetting::CHAPERONE_centerMarkerArrowDistance ) );
 }
 
 void ChaperoneTabController::setChaperoneColorA( int value, bool notify )
@@ -872,6 +896,14 @@ void ChaperoneTabController::setChaperoneColorA( int value, bool notify )
                                               static_cast<float>( value )
                                                   / 255.0f,
                                               "" );
+        if ( m_centerMarkerArrowOverlayHandle
+             != vr::k_ulOverlayHandleInvalid )
+        {
+            ovr_overlay_wrapper::setOverlayAlpha(
+                m_centerMarkerArrowOverlayHandle,
+                static_cast<float>( value ) / 255.0f,
+                "" );
+        }
         if ( notify )
         {
             emit chaperoneColorAChanged( value );
@@ -887,10 +919,12 @@ void ChaperoneTabController::setCenterMarkerNew( bool value, bool notify )
     {
         ovr_overlay_wrapper::showOverlay( m_chaperoneFloorOverlayHandle );
         m_centerMarkerOverlayNeedsUpdate = true;
+        setCenterMarkerArrowVisibility( centerMarkerArrow() );
     }
     else
     {
         ovr_overlay_wrapper::hideOverlay( m_chaperoneFloorOverlayHandle );
+        setCenterMarkerArrowVisibility( false );
         m_centerMarkerOverlayNeedsUpdate = false;
     }
 
@@ -1607,6 +1641,98 @@ void ChaperoneTabController::addRightHapticClick( bool rightHapticClickPressed )
     }
 }
 
+void ChaperoneTabController::setCenterMarkerArrowVisibility( bool visible )
+{
+    if ( m_centerMarkerArrowOverlayHandle == vr::k_ulOverlayHandleInvalid )
+    {
+        return;
+    }
+    if ( visible )
+    {
+        ovr_overlay_wrapper::showOverlay( m_centerMarkerArrowOverlayHandle );
+    }
+    else
+    {
+        ovr_overlay_wrapper::hideOverlay( m_centerMarkerArrowOverlayHandle );
+    }
+}
+
+void ChaperoneTabController::setCenterMarkerArrow( bool value, bool notify )
+{
+    settings::setSetting( settings::BoolSetting::CHAPERONE_centerMarkerArrow,
+                          value );
+    setCenterMarkerArrowVisibility( value && centerMarkerNew() );
+    if ( notify )
+    {
+        emit centerMarkerArrowChanged( value );
+    }
+}
+
+void ChaperoneTabController::setCenterMarkerArrowDistance( float value,
+                                                            bool notify )
+{
+    value = std::max( 0.1f, std::min( 5.0f, value ) );
+    if ( std::fabs( centerMarkerArrowDistance() - value ) > 0.005f )
+    {
+        settings::setSetting(
+            settings::DoubleSetting::CHAPERONE_centerMarkerArrowDistance,
+            static_cast<double>( value ) );
+        if ( notify )
+        {
+            emit centerMarkerArrowDistanceChanged( value );
+        }
+    }
+}
+
+void ChaperoneTabController::updateCenterMarkerArrow(
+    const vr::TrackedDevicePose_t& hmdPose )
+{
+    const float hmdX = hmdPose.mDeviceToAbsoluteTracking.m[0][3];
+    const float hmdZ = hmdPose.mDeviceToAbsoluteTracking.m[2][3];
+    const float targetX = m_centerMarkerPosition.m[0][3] - hmdX;
+    const float targetZ = m_centerMarkerPosition.m[2][3] - hmdZ;
+    const float horizontalDistance = std::sqrt( targetX * targetX
+                                                + targetZ * targetZ );
+    if ( horizontalDistance < centerMarkerArrowDistance() )
+    {
+        setCenterMarkerArrowVisibility( false );
+        return;
+    }
+
+    if ( horizontalDistance < 0.05f )
+    {
+        setCenterMarkerArrowVisibility( false );
+        return;
+    }
+
+    // Project the center direction into HMD space so the arrow stays in view.
+    const float rightX = hmdPose.mDeviceToAbsoluteTracking.m[0][0];
+    const float rightZ = hmdPose.mDeviceToAbsoluteTracking.m[2][0];
+    const float forwardX = -hmdPose.mDeviceToAbsoluteTracking.m[0][2];
+    const float forwardZ = -hmdPose.mDeviceToAbsoluteTracking.m[2][2];
+    const float screenRight = targetX * rightX + targetZ * rightZ;
+    const float screenForward = targetX * forwardX + targetZ * forwardZ;
+    const float targetAngle = std::atan2( screenRight, screenForward );
+    const float directionX = std::sin( targetAngle );
+    const float directionY = std::cos( targetAngle );
+
+    // Local +Y is the arrow direction, local +X is perpendicular to it, and
+    // local +Z faces the user. The overlay is therefore parallel to the HMD display.
+    vr::HmdMatrix34_t transform = { { { directionY, directionX, 0.0f, 0.0f },
+                                      { -directionX, directionY, 0.0f, -0.15f },
+                                      { 0.0f, 0.0f, 1.0f, -1.2f } } };
+    ovr_overlay_wrapper::setOverlayTransformTrackedDeviceRelative(
+        m_centerMarkerArrowOverlayHandle,
+        vr::k_unTrackedDeviceIndex_Hmd,
+        &transform,
+        "" );
+    ovr_overlay_wrapper::setOverlayWidthInMeters(
+        m_centerMarkerArrowOverlayHandle, 0.06f, "" );
+    ovr_overlay_wrapper::setOverlayTexelAspect(
+        m_centerMarkerArrowOverlayHandle, 2.0f, "" );
+    setCenterMarkerArrowVisibility( true );
+}
+
 void ChaperoneTabController::initCenterMarkerOverlay()
 {
     std::string overlayFloorMarkerKey
@@ -1626,6 +1752,50 @@ void ChaperoneTabController::initCenterMarkerOverlay()
         ovr_overlay_wrapper::setOverlayAlpha(
             m_chaperoneFloorOverlayHandle, boundsVisibility(), "" );
         m_centerMarkerOverlayIsInit = true;
+
+        const std::string arrowKey
+            = std::string( application_strings::applicationKey )
+              + ".centermarkerarrow";
+        if ( ovr_overlay_wrapper::createOverlay(
+                 arrowKey, arrowKey, &m_centerMarkerArrowOverlayHandle, "" )
+             == ovr_overlay_wrapper::OverlayError::NoError )
+        {
+            constexpr uint32_t width = 64;
+            constexpr uint32_t height = 256;
+            m_centerMarkerArrowTexture.assign( width * height * 4, 0 );
+            for ( uint32_t y = 0; y < height; ++y )
+            {
+                const uint32_t shaftWidth = y < 42 ? 0 : 6;
+                for ( uint32_t x = 0; x < width; ++x )
+                {
+                    const bool shaft = shaftWidth != 0
+                        && x >= width / 2 - shaftWidth / 2
+                        && x <= width / 2 + shaftWidth / 2;
+                    const bool head = y < 44
+                        && x >= width / 2 - y
+                        && x <= width / 2 + y;
+                    if ( shaft || head )
+                    {
+                        const auto offset = ( y * width + x ) * 4;
+                        m_centerMarkerArrowTexture[offset + 0] = 255;
+                        m_centerMarkerArrowTexture[offset + 1] = 255;
+                        m_centerMarkerArrowTexture[offset + 2] = 255;
+                        m_centerMarkerArrowTexture[offset + 3] = 255;
+                    }
+                }
+            }
+            ovr_overlay_wrapper::setOverlayRaw(
+                m_centerMarkerArrowOverlayHandle,
+                m_centerMarkerArrowTexture.data(), width, height, 4, "" );
+            ovr_overlay_wrapper::setOverlayWidthInMeters(
+                m_centerMarkerArrowOverlayHandle, 0.08f, "" );
+            ovr_overlay_wrapper::setOverlayTexelAspect(
+                m_centerMarkerArrowOverlayHandle, 1.0f, "" );
+            updateCenterMarkerOverlayColor();
+            ovr_overlay_wrapper::setOverlayAlpha(
+                m_centerMarkerArrowOverlayHandle, boundsVisibility(), "" );
+            setCenterMarkerArrowVisibility( false );
+        }
     }
     else
     {
@@ -1640,6 +1810,7 @@ void ChaperoneTabController::initCenterMarkerOverlay()
 void ChaperoneTabController::updateCenterMarkerOverlay(
     vr::HmdMatrix34_t* centerPlaySpaceMatrix )
 {
+    m_centerMarkerPosition = *centerPlaySpaceMatrix;
     if ( m_trackingUniverse != vr::TrackingUniverseRawAndUncalibrated )
     {
         ovr_overlay_wrapper::setOverlayTransformAbsolute(

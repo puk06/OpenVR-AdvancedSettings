@@ -99,6 +99,43 @@ OverlayError setOverlayFromFile( vr::VROverlayHandle_t overlayHandle,
     }
 }
 
+OverlayError setOverlayRaw( vr::VROverlayHandle_t overlayHandle,
+                            void* buffer,
+                            uint32_t width,
+                            uint32_t height,
+                            uint32_t bytesPerPixel,
+                            std::string customErrorMsg )
+{
+    vr::VROverlayError oError = vr::VROverlay()->SetOverlayRaw(
+        overlayHandle, buffer, width, height, bytesPerPixel );
+    if ( oError != vr::VROverlayError_None )
+    {
+        LOG( ERROR ) << "Error setting raw overlay texture for "
+                     << getOverlayKey( overlayHandle ) << " with error: "
+                     << vr::VROverlay()->GetOverlayErrorNameFromEnum( oError )
+                     << " " << customErrorMsg;
+        return OverlayError::UndefinedError;
+    }
+    return OverlayError::NoError;
+}
+
+OverlayError setOverlayTexelAspect( vr::VROverlayHandle_t overlayHandle,
+                                    float aspect,
+                                    std::string customErrorMsg )
+{
+    vr::VROverlayError oError
+        = vr::VROverlay()->SetOverlayTexelAspect( overlayHandle, aspect );
+    if ( oError != vr::VROverlayError_None )
+    {
+        LOG( ERROR ) << "Error setting overlay aspect for "
+                     << getOverlayKey( overlayHandle ) << " with error: "
+                     << vr::VROverlay()->GetOverlayErrorNameFromEnum( oError )
+                     << " " << customErrorMsg;
+        return OverlayError::UndefinedError;
+    }
+    return OverlayError::NoError;
+}
+
 OverlayError showOverlay( vr::VROverlayHandle_t overlayHandle,
                           std::string customErrorMsg )
 {
@@ -140,6 +177,26 @@ OverlayError setOverlayTransformAbsolute(
     if ( oError != vr::VROverlayError_None )
     {
         LOG( ERROR ) << "Error setting Overlay Position For "
+                     << getOverlayKey( overlayHandle ) << " with error: "
+                     << vr::VROverlay()->GetOverlayErrorNameFromEnum( oError )
+                     << " " << customErrorMsg;
+        return OverlayError::UndefinedError;
+    }
+    return OverlayError::NoError;
+}
+
+OverlayError setOverlayTransformTrackedDeviceRelative(
+    vr::VROverlayHandle_t overlayHandle,
+    vr::TrackedDeviceIndex_t trackedDevice,
+    const vr::HmdMatrix34_t* deviceToOverlayTransform,
+    std::string customErrorMsg )
+{
+    vr::VROverlayError oError
+        = vr::VROverlay()->SetOverlayTransformTrackedDeviceRelative(
+            overlayHandle, trackedDevice, deviceToOverlayTransform );
+    if ( oError != vr::VROverlayError_None )
+    {
+        LOG( ERROR ) << "Error setting tracked-device overlay position for "
                      << getOverlayKey( overlayHandle ) << " with error: "
                      << vr::VROverlay()->GetOverlayErrorNameFromEnum( oError )
                      << " " << customErrorMsg;

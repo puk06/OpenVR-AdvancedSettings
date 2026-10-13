@@ -8,5 +8,5 @@ warnings_as_errors {
 # Enables Link Time Optimization
 QMAKE_CXXFLAGS += /GL
 
-# Force standards-conformance
-QMAKE_CXXFLAGS += /permissive-
+# Qt 5.12's MSVC headers are not compatible with /permissive- on newer MSVC.
+# QMAKE_CXXFLAGS += /permissive-

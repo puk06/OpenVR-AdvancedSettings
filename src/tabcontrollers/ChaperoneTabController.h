@@ -14,6 +14,7 @@
 #include "../openvr/ovr_overlay_wrapper.h"
 #include "../openvr/ovr_settings_wrapper.h"
 #include <utility>
+#include <vector>
 
 class QQuickWindow;
 // application namespace
@@ -327,6 +328,11 @@ class ChaperoneTabController : public QObject
                     setChaperoneFloorToggle NOTIFY chaperoneFloorToggleChanged )
     Q_PROPERTY( bool centerMarkerNew READ centerMarkerNew WRITE
                     setCenterMarkerNew NOTIFY centerMarkerNewChanged )
+    Q_PROPERTY( bool centerMarkerArrow READ centerMarkerArrow WRITE
+                    setCenterMarkerArrow NOTIFY centerMarkerArrowChanged )
+    Q_PROPERTY( float centerMarkerArrowDistance READ centerMarkerArrowDistance
+                    WRITE setCenterMarkerArrowDistance NOTIFY
+                        centerMarkerArrowDistanceChanged )
 private:
     OverlayController* parent;
 
@@ -376,11 +382,19 @@ private:
 
     vr::VROverlayHandle_t m_chaperoneFloorOverlayHandle
         = vr::k_ulOverlayHandleInvalid;
+    vr::VROverlayHandle_t m_centerMarkerArrowOverlayHandle
+        = vr::k_ulOverlayHandleInvalid;
+    std::vector<unsigned char> m_centerMarkerArrowTexture;
+    vr::HmdMatrix34_t m_centerMarkerPosition = { { { 1.0f, 0.0f, 0.0f, 0.0f },
+                                                   { 0.0f, 1.0f, 0.0f, 0.0f },
+                                                   { 0.0f, 0.0f, 1.0f, 0.0f } } };
 
     std::vector<ChaperoneProfile> chaperoneProfiles;
 
     std::string m_floorMarkerFN = "/res/img/chaperone/centermark.png";
     void initCenterMarkerOverlay();
+    void updateCenterMarkerArrow( const vr::TrackedDevicePose_t& hmdPose );
+    void setCenterMarkerArrowVisibility( bool visible );
     void updateCenterMarkerOverlayColor();
     void checkCenterMarkerOverlayRotationCount();
     int m_rotationUpdateCounter = 0;
@@ -422,6 +436,8 @@ public:
     int getChaperoneProfileIndex();
 
     bool centerMarkerNew();
+    bool centerMarkerArrow() const;
+    float centerMarkerArrowDistance() const;
     bool m_centerMarkerOverlayNeedsUpdate = false;
 
     bool chaperoneFloorToggle();
@@ -498,6 +514,8 @@ public slots:
     void setChaperoneColorA( int value, bool notify = true );
 
     void setCenterMarkerNew( bool value, bool notify = true );
+    void setCenterMarkerArrow( bool value, bool notify = true );
+    void setCenterMarkerArrowDistance( float value, bool notify = true );
 
     void setCollisionBoundStyle( int value,
                                  bool notify = true,
@@ -559,6 +577,8 @@ signals:
 
     void chaperoneFloorToggleChanged( bool value );
     void centerMarkerNewChanged( bool value );
+    void centerMarkerArrowChanged( bool value );
+    void centerMarkerArrowDistanceChanged( float value );
 
     void chaperoneProfilesUpdated();
 };

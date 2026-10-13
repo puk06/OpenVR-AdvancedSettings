@@ -66,15 +66,15 @@ def package():
 
     add_line_to_run_bat_file("@ECHO Starting 7zip:")
     # -t7z means to output a 7zip file.
-    add_line_to_run_bat_file('"' + ZIP_LOC + '"' + " a -t7z " + get_project_dir() + "\\bin\\win64\\" + ZIP_NAME + " " + get_deploy_dir() + "\\*")
+    add_line_to_run_bat_file('"' + ZIP_LOC + '"' + " a -t7z " + quote_bat_path(get_project_dir() + "\\bin\\win64\\" + ZIP_NAME) + " " + quote_bat_path(get_deploy_dir() + "\\*"))
     add_error_handling_line_to_bat_file()
     add_line_to_run_bat_file("@ECHO 7zip done.")
     say("7zip added to file.")
 
     say("Adding NSIS to file.")
     add_line_to_run_bat_file("@ECHO Starting NSIS:")
-    add_line_to_run_bat_file("cd " + NSIS_LOC)
-    add_line_to_run_bat_file("makensis /V2 /WX " + get_project_dir() + "\\installer\\installer.nsi")
+    add_line_to_run_bat_file("cd /D " + quote_bat_path(NSIS_LOC))
+    add_line_to_run_bat_file("makensis /V2 /WX " + quote_bat_path(get_project_dir() + "\\installer\\installer.nsi"))
     add_error_handling_line_to_bat_file()
     add_line_to_run_bat_file("@ECHO NSIS done.")
     say("NSIS added to file.")
@@ -111,7 +111,7 @@ def build():
     say("All required build environment values are set.")
 
     #Otherwise qmake gets confused
-    add_line_to_run_bat_file("cd " + get_project_dir())
+    add_line_to_run_bat_file("cd /D " + quote_bat_path(get_project_dir()))
 
     say("Adding 'vcvarsall.bat' to batch file.")
     add_line_to_run_bat_file("@ECHO Setting up environment with Visual Studio 'vcvarsall.bat':")
@@ -156,7 +156,7 @@ def build():
     if os.path.exists(JOM_LOC):
         say(f"{JOM_LOC_VAR_NAME} exists. Using jom.")
         add_line_to_run_bat_file("@ECHO Running jom:")
-        add_line_to_run_bat_file(JOM_LOC)
+        add_line_to_run_bat_file(quote_bat_path(JOM_LOC))
         add_error_handling_line_to_bat_file()
         add_line_to_run_bat_file("@ECHO jom done.")
         say(f"{JOM_LOC_VAR_NAME} added to batch file.")
@@ -169,7 +169,7 @@ def build():
         add_line_to_run_bat_file("@ECHO nmake done.")
         say("nmake added to batch file.")
 
-    add_line_to_run_bat_file("cd " + get_original_dir())
+    add_line_to_run_bat_file("cd /D " + quote_bat_path(get_original_dir()))
 
     create_batch_file()
 

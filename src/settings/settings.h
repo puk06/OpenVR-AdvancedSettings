@@ -60,6 +60,7 @@ enum class BoolSetting
     CHAPERONE_chaperoneShowDashboardEnabled,
     CHAPERONE_disableChaperone,
     CHAPERONE_centerMarkerNew,
+    CHAPERONE_centerMarkerArrow,
 
     ROTATION_autoturnEnabled,
     ROTATION_autoturnUseCornerAngle,
@@ -92,6 +93,7 @@ enum class DoubleSetting
     CHAPERONE_showDashboardDistance,
     CHAPERONE_fadeDistanceRemembered,
     CHAPERONE_dimHeight,
+    CHAPERONE_centerMarkerArrowDistance,
 
     ROTATION_activationDistance,
     ROTATION_deactivateDistance,

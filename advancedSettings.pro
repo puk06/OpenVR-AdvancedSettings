@@ -89,15 +89,15 @@ win32 {
         WINDEPLOYQT_BUILD_TARGET += "--release"
     }
 
-    WINDEPLOYQT_OPTIONS = --dir $$COPY_DEST_DIR/qtdata \
-                          --libdir $$COPY_DEST_DIR \
-                          --plugindir $$COPY_DEST_DIR/qtdata/plugins \
+    WINDEPLOYQT_OPTIONS = --dir $$quote($$COPY_DEST_DIR/qtdata) \
+                          --libdir $$quote($$COPY_DEST_DIR) \
+                          --plugindir $$quote($$COPY_DEST_DIR/qtdata/plugins) \
                           --no-system-d3d-compiler \
                           --no-opengl-sw \
                           $$WINDEPLOYQT_BUILD_TARGET \
-                          --qmldir $$PWD/src/res/qml \
-                          $$COPY_DEST_DIR/AdvancedSettings.exe
-    WINDEPLOYQT_FULL_LINE = "$$WINDEPLOYQT_LOCATION $$WINDEPLOYQT_OPTIONS"
+                          --qmldir $$quote($$PWD/src/res/qml) \
+                          $$quote($$COPY_DEST_DIR/AdvancedSettings.exe)
+    WINDEPLOYQT_FULL_LINE = $$quote($$WINDEPLOYQT_LOCATION) $$WINDEPLOYQT_OPTIONS
 
     # Force windeployqt to run in cmd, because powershell has different syntax
     # for running executables.
